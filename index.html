@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Chat IA</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #111;
+            color: white;
+            font-family: Arial;
+        }
+
+        header {
+            background: #222;
+            padding: 10px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .container {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #prompt {
+            width: 100%;
+            padding: 10px;
+            background: #222;
+            border: none;
+            color: white;
+            border-radius: 5px;
+        }
+
+        #chatBox {
+            height: 400px;
+            overflow-y: scroll;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .msg {
+            background: #333;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .resposta {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 5px;
+            position: relative;
+        }
+
+        .copyBtn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #444;
+            border: none;
+            color: white;
+            padding: 4px 7px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        #msgInput {
+            width: 100%;
+            padding: 12px;
+            background: #222;
+            border: none;
+            color: white;
+            border-radius: 5px;
+        }
+
+        button {
+            background: #4CAF50;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<header>Meu Chat IA</header>
+
+<div class="container">
+
+    <textarea id="prompt" rows="2" placeholder="Prompt do sistema (role do bot)..."></textarea>
+
+    <div id="chatBox"></div>
+
+    <input id="msgInput" placeholder="Digite sua mensagem..." />
+
+    <button onclick="enviar()">Enviar</button>
+
+</div>
+
+<script>
+    const API_KEY = "COLE_SUA_API_AQUI";
+
+    async function enviar() {
+        let prompt = document.getElementById("prompt").value;
+        let msg = document.getElementById("msgInput").value;
+        let chatBox = document.getElementById("chatBox");
+
+        if (!msg) return;
+
+        // Mostra mensagem do usuário
+        let userDiv = document.createElement("div");
+        userDiv.className = "msg";
+        userDiv.innerText = "Você: " + msg;
+        chatBox.appendChild(userDiv);
+
+        document.getElementById("msgInput").value = "";
+
+        // Faz requisição à API do Google Gemini
+        const resp = await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" + API_KEY,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: prompt + "\n\nUsuário: " + msg }]
+                    }]
+                })
+            }
+        );
+
+        const data = await resp.json();
+        let resposta = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Erro na resposta.";
+
+        // Caixa de resposta com botão copiar
+        let botDiv = document.createElement("div");
+        botDiv.className = "resposta";
+        botDiv.innerHTML = `
+            ${resposta.replace(/\n/g, "<br>")}
+            <button class="copyBtn" onclick="copiar(this)">Copiar</button>
+        `;
+
+        chatBox.appendChild(botDiv);
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function copiar(btn) {
+        let texto = btn.parentElement.innerText.replace("Copiar", "").trim();
+        navigator.clipboard.writeText(texto);
+        btn.innerText = "Copiado!";
+        setTimeout(() => btn.innerText = "Copiar", 1500);
+    }
+</script>
+
+</body>
+</html>
